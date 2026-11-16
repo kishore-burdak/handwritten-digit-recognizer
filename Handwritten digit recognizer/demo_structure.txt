@@ -1,0 +1,906 @@
+=== PAGE 1 ===
+   SAGE AutoML Algorithm
+   Sequential Analysis & Genealogic Evolution
+   A
+   Training Report
+   Submitted
+   in partial fulfillment of Bachelors in technology in
+   Artificial Intelligence and Data Science
+   Submitted To: Dr.Manoj Kuri
+   Submitted By:
+   Head of Department
+   Kishore
+   Artificial Intelligence and Data Seience
+   Department of Artificial Intelligence and data science
+   Board of Technical Education, Govt. of Rajasthan
+   Year 2026
+   1
+=== PAGE 2 ===
+   ACKNOWLEDGMENT
+   Itgives me immense pleasure in presenting this training report on the topic
+   SAGE AutoML Algorithm (Sequential Analysis & Genealogic Evolution) I
+   would like to take this opportunity to express my deepest gratitude to the
+   people,
+   who have contributed their valuable time for helping me to successfully
+   complete this training.
+   Irecord my sincere thanks to Director Sh. V. S. Shenoi, Defence Laboratory
+   Jodhpur, Defence Research and Development Organisation (DRDO) for
+   providing me an excellent opportunity to undergo training in his esteemed
+   organization through which I could gain in exposure in the research and
+   development environment and getting acquainted in Software Development in
+   field of defence technologies.
+   Iwish to express my sincere gratitude and special thanks to Dr. Prashant
+   Vasishtha,Scientist’G’,TechnologyDirector,CDSTdivision for permitting
+   me to work in his division.
+   Iexpress my deep sense of gratitude to my mentor Sh. Umesh Chaturvedi,
+   Scientist E, for valuable guidance and making me aware of the recent
+   defence technologies.
+   This training is a result of the contribution of many. They have enriched my
+   knowledge by making suggestions based on their experience. Finally, I
+   would like to thank Defence Research and Development Organization,
+   Jodhpur for conducting such kind of training, my colleagues and all the
+   people who were directly and indirectly involved in the activity.
+   2
+=== PAGE 3 ===
+   CERTIFICATE
+   Assessment of Guide
+   This is to certify that Kishore (B.Tech. AI&DS, 2nd Year), student at
+   Government Engineering College of Bikaner has worked on the project
+   entitled “SAGE AutoML Algorithm (Sequential Analysis & Genealogic
+   Evolution)” at this centre from 11 May 2026 to 11 July 2026. This report
+   comprises the organized work and progress carried out by him during the
+   project duration under my guidance and supervision.
+   This report does not contain any confidential information pertaining to DRDO.
+   Date:
+   Place: Jodhpur
+   Dr. Umesh Chaturvedi
+   3
+=== PAGE 4 ===
+   TABLE OF CONTENTS
+   1
+   2
+   Introduction
+   06-07
+   1.1 BackgroundandMotivation
+   06
+   1.2 ProblemStatement
+   06
+   1.3 Objectives
+   07
+   Literature Review
+   08-09
+   08
+   2.1 EvolutionofAutoML
+   3
+   4
+   5
+   6
+   7
+   8
+   2.2 Need forOpenBox/Black-boxOptimization
+   08
+   2.3 ConformalPredictionTheory
+   09
+   System Architecture
+   10-11
+   3.1 Overall DAGPipeline
+   10
+   3.2 Module Descriptions
+   11
+   Algorithm Selection Rationale
+   12-14
+   4.1 Gradient BoostingTrio
+   12
+   4.2 Ensemble Methods
+   13
+   4.3 Linear & Instance-BasedModels
+   13
+   4.4 Neural Network(MLP)
+   14
+   OpenBox AutoML — Why We Used It
+   15-17
+   5.1 What is OpenBox / Black-boxOptimization
+   15
+   5.2 Optuna as the OpenBoxEngine
+   15
+   5.3 TPE Sampler — Tree-structuredParzenEstimator
+   16
+   Nested Cross-Validation Design
+   18-19
+   6.1 TheLeakage ProbleminStandardAutoML
+   18
+   6.2 SAGE'sStrict NestedIsolationProtocol
+   18
+   Conformal Prediction & Uncertainty Quantification
+   Data Processing Pipeline
+   22
+   8.2 EDA Engine
+   22
+   8.3 LeakageDetection
+   22
+   Experimental Results&Screenshots
+   10 LLM OrchestrationLayer
+   11 MLflow ExperimentTracking
+   12 Conclusion
+   14
+   22-23
+   8.1 Data Loading&Cleaning
+   9
+   13
+   20-21
+   Appe ndix
+   References
+   24-27
+   28-29
+   30-31
+   32-33
+   34
+   35-36
+   4
+=== PAGE 5 ===
+   LIST OFFIGURES
+   3.1 - SAGE AutoML terminal launch and pipeline initialization screen
+   5.1 - Data loading Sanitization node in the SAGE pipeline
+   5.2 - Feature and target selection module with column registry
+   6.1 Task type identification engine – Automatic classification vs regression inference
+   6.2 - EDA engine output: class distribution, correlation analysis, outlier detection
+   7.1 - Leakagedetectionengine: mutual information scan and quarantine log
+   8.1 - SAGE pipeline: nested CV initiation and base model tuning progress
+   9.1 - Base learner optimization results: LightGBM, XGBoost, CatBoost metrics
+   9.2 - Multi-model training progression with Optuna TPE hyperparameter search
+   9.3 - Model accuracy, F1-macro, ROC-AUC scores per base learner after CV
+   9.4 - Phase B: Stacking meta-ensemble synthesis and calibration
+   9.5 - Final SAGE Super-Learner results: coverage, ECE, and uncertainty metrics
+   9.6 - LLM orchestration layer: Mistral meta-insight synthesis and report export
+   5
+=== PAGE 6 ===
+   1.
+   INTRODUCTION
+   1.1 Background and Motivation
+   Machine learning has transitioned from a research curiosity to a central pillar of
+   modern technology. Organizations across industries — healthcare, finance,
+   logistics, and retail — deploy predictive models at massive scales. However, the
+   process of building a reliable model remains labor-intensive and error-prone. A
+   data scientist must select algorithms, engineer features, tune hyperparameters,
+   validate models, and quantify uncertainty — a process that requires months of
+   expertise.
+   Automated Machine Learning (AutoML) emerged to democratize this process.
+   Systems like Google AutoML, H2O AutoML, AutoSklearn, and TPOT promised to
+   automate model selection and training. However, most commercial AutoML
+   systems suffer from a critical scientific flaw: they use static train-validation-test
+   holdouts that, while convenient, produce optimistically biased performance
+   estimates. When a practitioner evaluates 500 model configurations on the same
+   validation set, the reported accuracy reflects the best random draw from a
+   distribution — not the true generalization capability of the chosen model.
+   SAGE (Sequential Analysis & Genealogic Evolution) was designed to address
+   these fundamental flaws. It is a terminal-based, research-grade AutoML system
+   that enforces mathematical rigor at every stage: from data ingestion and leakage
+   detection through hyperparameter optimization and final uncertainty
+   quantification.
+   1.2 Problem Statement
+   Contemporary AutoML systems exhibit three critical failure modes that
+   compromise the scientific validity of their results:
+   Data Leakage: Preprocessing transformations (scaling, imputation,
+   encoding) fitted on the full dataset before cross-validation, leaking test
+   statistics into the training process, and inflating validation scores.
+   Optimistic Bias: Using a single static validation split for hyperparameter
+   search means the reported metric is the maximum of many random
+   evaluations, not an unbiased generalization estimate.
+   Epistemic Overconfidence: Reporting point-estimate accuracy scores
+   without formal uncertainty bounds, creating a false sense of model
+   reliability in production deployment.
+   6
+=== PAGE 7 ===
+   SAGE directly addresses each of these failure modes through strict nested crossvalidation, Bayesian hyperparameter optim
+   isolation, and native Conformal Prediction for distribution-free uncertainty bounds.
+   1.3 Objectives
+   The primary objectives of the SAGE AutoML internship project are:
+   1. Design and implement a True Nested Cross-Validation framework that
+   eliminates all forms of data leakage in the model evaluation pipeline.
+   2. Implement Bayesian Hyperparameter Optimization (via Optuna with TPE
+   Sampler) as the black-box search engine for all ten algorithm families.
+   3. Build a diverse ensemble of ten ML algorithms spanning gradient
+   boosting, ensemble methods, linear models, instance-based learning, and
+   neural networks.
+   4. Implement native Split Conformal Prediction to provide guaranteed 95%
+   marginal coverage for both classification and regression tasks.
+   5. Develop a leakage detection subsystem using Mutual Information metrics
+   to automatically identify and quarantine data-leaky features.
+   6. Integrate MLflow for experiment tracking, parameter logging, and artifact
+   reproducibility.
+   7. Orchestrate a local LLM (Mistral) to generate structured meta-insights
+   from pipeline outputs.
+   8. Provide a rich, interactive terminal interface with progress tracking and
+   real-time pipeline visualization.
+   7
+=== PAGE 8 ===
+   2. LITERATURE REVIEW
+   2.1 Evolution of AutoML
+   The AutoML paradigm began with early work on combined algorithm selection and
+   hyperparameter optimization (CASH). Thornton et al. (2013) introduced AutoWEKA, the first system to frame AutoML as a st
+   Bayesian optimization. Feurer et al. (2015) extended this with Auto-sklearn,
+   incorporating meta-learning and ensemble construction on top of scikit-learn
+   pipelines.
+   Google's AutoML systems brought the concept to commercial scale, optimizing
+   neural architecture search (NAS) for image classification. H2O AutoML (LeDell &
+   Poirier, 2020) provided accessible tree-based ensemble automation. TPOT (Olson
+   et al., 2016) introduced genetic programming for pipeline optimization. Despite their
+   achievements, most of these systems still rely on simple train-test splits or singlelevel cross-validation, leaving them
+   2.2 Need for OpenBox / Black-box Optimization
+   Hyperparameter optimization (HPO) is the process of finding the optimal
+   configuration for a machine learning algorithm. Early approaches used grid search
+   — exhaustively evaluating all configurations in a predefined space — and random
+   search (Bergstra & Bengio, 2012). While random search outperforms grid search in
+   high-dimensional spaces, it remains sample-inefficient.
+   Black-box optimization methods treat the objective function (cross-validated model
+   performance) as a black box — queried only at sampled points, with no knowledge
+   of gradients or internal structure. Bayesian Optimization (BO) revolutionized this
+   space by building a probabilistic surrogate model of the objective function and
+   using an acquisition function (Expected Improvement, UCB) to intelligently select
+   the next query point.
+   OpenBox (Li et al., 2021) introduced a generalized open-source framework for
+   black-box optimization that supports parallel evaluation, multi-fidelity optimization,
+   and transfer learning across tasks. In SAGE, we implement the same principles
+   through Optuna, using the Tree-structured Parzen Estimator (TPE) sampler — a
+   powerful Bayesian approach that models the distribution of good and bad
+   hyperparameter configurations separately. Why Black-box Optimization Matters
+   for AutoML
+   8
+=== PAGE 9 ===
+   Why Black-box Optimization for AutoML
+   The hyperparameterSearchspace istypically non-differentiable – gradient
+   methods cannot be applied.
+   Each function evaluation (training + cross-validation) is expensive – sample
+   efficiency is critical.
+   Bayesian methods like TPE build an internal model of the landscape, Exploring
+   promising regions more efficiently.
+   Compared to random search, TPE typically achieves equal or better results in 510x fewer evaluations.
+   2.3 Conformal Prediction Theory
+   Conformal Prediction (Vovk et al., 2005) is a framework for constructing prediction
+   sets with guaranteed marginal coverage under the exchangeability assumption —
+   no parametric assumptions about the data distribution are required. For a userspecified confidence level 1-α (e.g., 95%)
+   the true label falls within the prediction set for at least 1-α fraction of test samples.
+   The Split Conformal variant (Papadopoulos et al., 2002) is computationally efficient:
+   the model is trained once, a calibration set is held out, non-conformity scores are
+   computed, and the (1-α) quantile of these scores defines the prediction set
+   threshold. Unlike Bayesian credible intervals, conformal intervals are distributionfree and finitely valid.
+   Recent work by Angelopoulos & Bates (2021) in "A Gentle Introduction to
+   Conformal Prediction" has made the framework accessible for practical
+   deployment. SAGE implements split conformal prediction natively for both
+   classification (prediction sets) and regression (interval prediction).
+   9
+=== PAGE 10 ===
+   3. SYSTEM ARCHITECTURE
+   3.1 Overall DAG Pipeline
+   SAGE is architected as a Directed Acyclic Graph (DAG) of computational nodes,
+   where each node represents a distinct processing stage with well-defined inputs
+   and outputs. This architecture prevents implicit dependencies, ensures
+   reproducibility, and makes each stage independently testable.
+   Figure 3.1 - SAGE AutoML terminal launch and pipeline initialization screen
+   The pipeline DAG consists of the following vertexes executed in strict topological
+   order:
+   INGESTION_NODE: CSV data loading with format validation and schema
+   inference (data_loader.py)
+   SANITIZATION_NODE: Missing value imputation, type normalization, and
+   duplicate removal (data_cleaner.py)
+   TARGET_INFERENCE_NODE: Automatic ML task type detection —
+   binary classification, multi-class, or regression (task_identifier.py)
+   TARGET_SELECTION_NODE: Interactive feature and target variable
+   selection with validation (feature_selector.py)
+   DATA_CONTEXT_NODE: Leakage detection + Exploratory Data Analysis
+   (leakage_detector.py + eda_engine.py)
+   10
+=== PAGE 11 ===
+   SAGE_SYNTHESIS_VERTEX: 10-model nested CV + meta-ensemble
+   construction (advanced_model_training.py)
+   LLM_ORCHESTRATION_VERTEX: Local Mistral-powered meta-insight
+   generation (llm_orchestrator.py)
+   REPORT_EXPORT_NODE: PDF/HTML report generation with full
+   pipeline metrics (report_generator.py)
+   3.2 Module Descriptions
+   Module / File
+   Responsibility
+   main.py
+   Top-level DAG orchestrator; manages pipeline
+   flow, transition pauses, and exception handling
+   data_loader.py
+   CSV ingestion, file dialog support, schema
+   display, and initial data preview
+   data_cleaner.py
+   Structural cleaning: missing values, type
+   inference, duplicate rows, whitespace
+   normalization
+   feature_selector.py
+   Interactive indexed column selector for target
+   and feature variables with validation
+   task_identifier.py
+   Heuristic + statistical task type inference from
+   target variable cardinality and dtype
+   leakage_detector.py
+   Mutual Information-based leakage scan; autoquarantines features above MI threshold 0.85
+   eda_engine.py
+   Statistical EDA: class distribution, Pearson
+   correlation matrix, Z-score outlier detection
+   advanced_model_training.py
+   10-model Optuna tuning + Stacking metaensemble + Conformal Prediction + MLflow
+   logging
+   model_training.py
+   Family-based training display; visualizes
+   model topology tree for interactive sessions
+   llm_orchestrator.py
+   HTTP client to local Mistral (Ollama) for LLMbased architectural insight synthesis
+   report_generator.py
+   Exports comprehensive HTML/PDF report with
+   metrics, plots, and SHAP attributions
+   autobbox_tui.py
+   Standalone TUI (Text User Interface) for
+   bounding-box dataset inspection
+   11
+=== PAGE 12 ===
+   4. ALOGRITHM SELECTION RATIONALE
+   SAGE deliberately spans ten algorithm families to capture diverse inductive
+   biases. No single algorithm dominates all tasks — the No Free Lunch theorem
+   guarantees this. A diverse ensemble exploits the decorrelation between errors:
+   where gradient boosting models fail (extrapolation beyond training range), linear
+   models may succeed; where KNN struggles (curse of dimensionality), tree
+   ensembles excel.
+   4.1 Gradient Boosting Trio— LightGBM, XGBoost, CatBoost
+   4.1.1 LightGBM
+   Developed byMicrosoft Research(Keetal.,2017), LightGBM uses leaf-wise (bestfirst) treegrowth ratherthandepth-wisegrowth,
+   information gainglobally.Thisproducesasymmetric trees that model complex data
+   distributionsmoreefficientlythansymmetric trees.
+   Key reasons for inclusion:
+   Histogram-basedlearningreducesfeaturebinning from O(#data ×
+   #features)toO(#bins×#features)
+   Gradient-basedOne-SideSampling(GOSS)and Exclusive Feature
+   Bundling(EFB)enable20×fastertraining
+   Native sparsematrixsupport—criticalforhigh-cardinality OHE-encoded
+   categoricalfeatures
+   Best performanceprofileontabulardatasetsup to 10M rows in
+   benchmarkstudies
+   4.1.2 XGBoost
+   Chen & Guestrin(2016)introducedXGBoostasanoptimized distributed gradient
+   boosting systemwithexplicitregularization(L1+L2 on leaf weights). Unlike standard
+   GBDT,XGBoostusesasecond-orderTaylor expansion of the loss function to
+   computeoptimalleafvaluesanalytically.
+   Exact greedysplitfindingwithsortedfeaturevalues for maximum
+   precision
+   Column subsampling(likeRandomForest)reduces overfitting in highdimensional settings
+   12
+=== PAGE 13 ===
+   Built-in cross-validation and early stopping prevent overtraining
+   Proven track record: won >50% of Kaggle competitions (2015–2020)
+   before LightGBM's rise.
+   4.1.3 CatBoost
+   CatBoost (Prokhorenkova et al., 2018) from Yandex Research addresses the target
+   leakageproblem in categorical feature encoding. Standard target encoding leaks
+   target statistics from the current sample into its own encoding — CatBoost uses
+   OrderedBoosting and random permutations to prevent this.
+   Symmetric (oblivious) trees enable faster inference — critical in production
+   environments
+   Native handling of categorical features without one-hot encoding,
+   preventing dimensionality explosion
+   Ordered Boosting: each sample's residual is computed using a model
+   trained on prior samples only.
+   4.2 Ensemble Methods — HistGBM, RandomForest, ExtraTrees,
+   AdaBoost
+   Beyond the boosting trio, SAGE includes scikit-learn's HistGradientBoosting (a
+   memory-efficient GBDT variant), RandomForest (Breiman, 2001), ExtraTrees
+   (Geurts et al., 2006), and AdaBoost (Freund & Schapire, 1997).
+   HistGradientBoosting: Scikit-learn's native GBDT with histogram binning;
+   handles missing values natively without imputation
+   RandomForest: Bootstrap aggregation of deep decision trees with feature
+   subsampling; reduces variance via decorrelated bagging
+   ExtraTrees: Extreme randomization of both split features AND split
+   thresholds; higher bias, lower variance than RF, faster training
+   AdaBoost: Sequential re-weighting of misclassified samples; particularly
+   effective on clean, low-noise datasets with weak learners
+   4.3 Linear & Instance-Based Models
+   Despite the dominance of tree-based methods on tabular data, linear models and
+   KNN provide critical diversity in the meta-ensemble. Logistic Regression
+   (classification) and Ridge Regression (regression) provide globally linear decision
+   boundaries that complement the local, non-linear boundaries of tree-based models.
+   13
+=== PAGE 14 ===
+   Logistic/Ridge: Excellent baseline performance, interpretable coefficients,
+   no overfitting risk with proper C/alpha tuning.
+   KNN: Instance-based, non-parametric; captures local manifold structure;
+   orthogonal error patterns to tree models.
+   4.4 Neural Network — MLP
+   The Multi-Layer Perceptron provides the non-linear function approximation capacity
+   of a neural network within the tabular domain. While deep learning typically
+   underperforms gradient boosting on tabular data, MLP serves as an important
+   ensemble component when the data exhibits non-linear feature interactions that
+   tree splits cannot capture efficiently.
+   Hidden layer size (16–64 neurons) tuned via Optuna — avoids both
+   underfitting (too small) and overfitting (too large) for typical tabular
+   datasets
+   Provides smooth, continuous decision boundaries as opposed to the stepfunction boundaries of tree models
+   14
+=== PAGE 15 ===
+   5. OPENBOX AUTOML: WHO WE USED IT
+   5.1 What is OpenBox / Black-box Optimization
+   OpenBox is a generalized system for black-box optimization (BBO) — the problem
+   of finding the global optimum of an objective function f(x) when we have no
+   analytical form, no gradients, and evaluations are expensive. In the context of
+   AutoML, x represents a hyperparameter configuration and f(x) is the crossvalidated model performance.
+   The core challenge is sample efficiency: each evaluation of f(x) requires training
+   and evaluating a full ML model, which may take minutes or hours. A naive
+   approach (grid search over thousands of configurations) is computationally
+   infeasible. OpenBox's family of algorithms — based on Bayesian Optimization —
+   dramatically reduces the number of evaluations required to find near-optimal
+   configurations.
+   Figgure 5.1 - Data loading Sanitization node in the SAGE pipeline
+   5.2 Optuna as the OpenBox Engine
+   SAGE uses Optuna (Akiba et al., 2019) as its black-box optimization engine.
+   Optuna is a framework-agnostic hyperparameter optimization library that
+   implements multiple search strategies and provides define-by-run style API for
+   dynamic search space specification.
+   15
+=== PAGE 16 ===
+   Optuna was chosen over alternatives (Hyperopt, Ray Tune, Scikit-Optimize) for
+   the following reasons:
+   Define-by-run API: The search space is defined dynamically within the
+   objective function, allowing algorithm-conditional parameters (e.g.,
+   XGBoost's max_depth exists only for tree models, not linear models)
+   Efficient TPE Sampler: Optuna's default TPE implementation achieves
+   state-of-the-art sample efficiency across benchmark suites
+   Built-in pruning: MedianPruner and PercentilePruner can terminate
+   unpromising trials early, further reducing computation
+   Clean integration: Optuna's Study/Trial API integrates seamlessly with
+   scikit-learn Pipelines via cross_validate
+   Visualization utilities: Built-in plot functions for optimization history,
+   parameter importance, and contour plots
+   5.3 TPE Sampler — Tree-structured Parzen Estimator
+   The Tree-structured Parzen Estimator (TPE), introduced by Bergstra et al. (2011),
+   is the algorithmic heart of Optuna's search strategy. Unlike classical Bayesian
+   Optimization that models P(score | config), TPE models two separate distributions:
+   l(x): Distribution of configurations that achieved above-threshold
+   performance (top γ% of trials)
+   g(x): Distribution of configurations that achieved below-threshold
+   performance (bottom 1-γ% of trials)
+   ∝
+   The acquisition function is the Expected Improvement (EI) ratio: EI(x)
+   l(x) / g(x).
+   TPE samples new configurations by maximizing this ratio — sampling from l(x)
+   while dividing by g(x) ensures the sampler focuses on regions where good
+   configurations are densely distributed and bad configurations are sparse.
+   In SAGE, each algorithm uses 5 Optuna trials (n_trials=5) with a TPE sampler
+   seeded at 42 for reproducibility. The hyperparameter spaces are carefully defined
+   to cover the practically relevant range without unnecessary breadth:
+   Algorithm
+   Tuned Hyperparameters
+   16
+=== PAGE 17 ===
+   LightGBM
+   n_estimators [50–200], learning_rate [0.001–0.2 log],
+   num_leaves [20–60]
+   XGBoost
+   n_estimators [50–200], learning_rate [0.001–0.2 log],
+   max_depth [3–8]
+   CatBoost
+   iterations [50–200], learning_rate [0.001–0.2 log], depth
+   [4–8]
+   HistGBM
+   max_iter
+   RandomForest
+   n_estimators [50–200], max_depth [3–10]
+   [50–200],
+   learning_rate
+   [0.001–0.2
+   log]
+   ExtraTrees
+   n_estimators [50–200], max_depth [3–10]
+   Logistic/Ridge
+   AdaBoost KNN
+   MLP
+   C/alpha [0.01–10.0 log]
+   n_estimators [50–200], learning_rate [0.001–1.0 log]
+   n_neighbors [3–15]
+   layer_size [16–64], lr_init [0.0001–0.01 log]
+   Figure 5.2 - Feature and target selection module with column registry
+   17
+=== PAGE 18 ===
+   6. NESTED CROSS – VALIDATION DESIGN
+   6.1 The Leakage Problem in Standard AutoML
+   The most pervasive source of inflated AutoML performance is the misuse of the
+   validation set. Consider the following common workflow: split data 80/20, train
+   100 model configurations on the 80% split, evaluate all on the 20% validation
+   split, select the best. The reported validation score is biased because the
+   selection process used the validation set as a selection criterion.
+   Mathematically, if we evaluate N models and select the maximum,
+   E[max(X₁,...,Xₙ)] > E[Xᵢ] for any fixed i. This selection bias grows logarithmically
+   with N — evaluating 100 configurations on the same validation fold can
+   overestimate true performance by 3–8 absolute percentage points in empirical
+   studies (Cawley & Talbot, 2010).
+   A secondary source of leakage is preprocessing leakage: fitting a
+   StandardScaler, SimpleImputer, or SelectKBest on the full dataset (including
+   validation fold) before cross-validation allows test statistics (mean, std, feature
+   rankings) to contaminate the training process.
+   6.2 SAGE's Strict Nested Isolation Protocol
+   SAGE implements True Nested Cross-Validation (Phase A) with strict inner-outer
+   fold isolation:
+   Outer evaluation (3-fold StratifiedKFold for classification, KFold for
+   regression): Provides unbiased generalization estimate; outer fold test
+   data is NEVER seen during inner HPO
+   Inner optimization (3-fold CV within Optuna objective): Optuna's 5 trials
+   evaluate configurations only on inner folds; outer test data remains sealed
+   Preprocessing isolation: The dynamic pipeline (StandardScaler,
+   SimpleImputer, OHE, SelectKBest) is built INSIDE the objective function
+   and fitted INSIDE cross_validate — never on held-out data
+   The scikit-learn Pipeline object is the enforcement mechanism: when
+   cross_validate(pipeline, X, y, cv=inner_cv) is called, Pipeline.fit_transform() is
+   called only on the training portion of each fold, and Pipeline.transform() (not
+   fit_transform) is called on the validation portion. This guarantees zero leakage.
+   18
+=== PAGE 19 ===
+   Figure 6.1 Task type identification engine – Automatic classification vs regression inference
+   Figure 6.2 - EDA engine output: class distribution, correlation analysis, outlier detection
+   19
+=== PAGE 20 ===
+   7. CONFORMAL PREDICTION & UNCERTAINTY
+   QUANTIFICATION
+   After Phase A (nested CV) identifies optimal hyperparameters for each model, Phase B
+   synthesizes the ten base learners into a calibrated stacking meta-ensemble. The final output
+   includes not just point predictions but formally guaranteed prediction sets/intervals via
+   Split Conformal Prediction.
+   7.1 Classification — Prediction Sets
+   For classification, non-conformity scores are defined as: s(xᵢ, yᵢ) = 1 − f̂(xᵢ)[yᵢ], where f̂(x)
+   [y] is the calibrated probability assigned to the true class. Intuitively: if the model is
+   confident and correct, this score is near 0; if the model assigns low probability to the true
+   class, the score is near 1.
+   Given a calibration set of size n, the (⌈(n+1)(1-α)⌉ / n)-quantile q̂̂ of the calibration scores
+   defines the threshold. At test time, the prediction set C(x) includes all classes y for which
+   f̂(x)[y] ≥ 1 − q̂̂ .
+   FORMAL COVERAGE GUARNTEE
+   P(Y_test C(X_test))≥1 − α
+   ∈
+   For α = 0.05: guaranteed 95% marginal coverage over test samples
+   No parametric assumptions — valid for any data distribution
+   Finite-sample validity: guarantee holds for n ≥ 1
+   The mean prediction set size reflects epistemic uncertainty: smaller sets =
+   more confident model
+   7.2 Regression — Prediction Intervals
+   For regression, non-conformity scores are absolute residuals: s(xᵢ, yᵢ) = |yᵢ − f̂̂(xᵢ)|.
+   The quantile q̂̂ defines symmetric intervals: Ĉ(x) = [f̂̂(x) − q̂̂ , f̂̂(x) + q̂̂ ], with formal
+   guarantee P(Y
+   ∈ Ĉ(X)) ≥ 1 − α.
+   The mean interval width (2q̂̂ ) quantifies epistemic uncertainty — wider intervals
+   indicate that the model's residuals on the calibration set are large, signaling either
+   high inherent noise or insufficient model capacity for the regression task.
+   7.3 Expected Calibration Error (ECE)
+   Beyond conformal coverage, SAGE computes ECE using 10 equal-width
+   probability bins. ECE measures the alignment between predicted probabilities and
+   20
+=== PAGE 21 ===
+   empirical frequencies: a model that says '70% confident' should be correct 70% of
+   the
+   time. The
+   meta-ensemblewithuses
+   Isotonic
+   Regression
+   calibration
+   (CalibratedClassifierCV
+   method='isotonic')
+   to
+   minimize ECE before
+   the conformal calibration step.
+   Figure 7.1 — Leakage detection engine: mutual information scan and quarantine log
+   21
+=== PAGE 22 ===
+   8. DATA PROCESSING PIPLINE
+   8.1 Data Loading & Cleaning
+   The data processingpipeline begins with data_loader.py, which handles CSV
+   ingestion with comprehensive error handling. The module supports both direct path
+   input and an interactive file browser fallback. A preliminary data preview table
+   shows column names, dtypes, non-null counts, and sample values to orient the
+   user before committing to the pipeline.
+   data_cleaner.py
+   preprocessing:
+   performs
+   structural
+   cleaning
+   before
+   any
+   ML-specific
+   Removes fully empty columns (all NaN) that contribute no information
+   Strips leading/trailing whitespace from string columns to prevent phantom
+   duplicate categories
+   Identifies and reports duplicate rows, with optional removal
+   Performs type inference: attempts to downcast object columns to more
+   memory-efficient numeric types where possible
+   Generates a cleaning audit log displayed as a formatted table —
+   transparency over silent transformations
+   8.2 EDA Engine
+   TheEDA engine (eda_engine.py) provides three analytical layers rendered as
+   interactive terminal tables via the Rich library:
+   Class Distribution Analysis: Visual bar chart (Unicode block characters)
+   showing count, percentage, and relative weight per class label. Flags
+   critical imbalance (minority/majority < 0.2) with SMOTE/Focal Loss
+   recommendations.
+   Feature Correlation Analysis: Computes full Pearson correlation matrix,
+   extracts upper triangle to avoid duplicates, and flags pairs with |r| > 0.80
+   as redundant. Recommends dropping one of each highly correlated pair.
+   Outlier Detection: Z-score method (threshold = 3.0) applied per numeric
+   column. Reports outlier count, max value, and min value per flagged
+   feature. Useful for identifying sensor errors, data entry mistakes, or
+   genuine anomalies.
+   8.3 Leakage Detection
+   22
+=== PAGE 23 ===
+   leakage_detector.py implements Mutual Information (MI)-based leakage detection.
+   MI measures statistical dependence between each feature and the target variable
+   — a perfectly leaky feature (e.g., a direct copy of the target) would have MI
+   approaching infinity.
+   Features with MI > 0.85 (configurable threshold) are automatically quarantined
+   (dropped) and logged in the Quarantine Audit Log. The module handles mixed
+   dtypes correctly: non-numeric targets are encoded via category codes before MI
+   computation, and the classification vs. regression task type is passed explicitly to
+   select between mutual_info_classif and mutual_info_regression.
+   Figure 8.1 — SAGE pipeline: nested CV initiation and base model tuning progress
+   23
+=== PAGE 24 ===
+   9. EXPERIMENTAL RESULTS & SCREENSHOTS
+   The following screenshots document the SAGE AutoML pipeline executing on real
+   datasets, demonstrating the interactive terminal UI, model training progression,
+   and final evaluation metrics. Each screenshot corresponds to a specific DAG
+   vertex in the pipeline.
+   9.1 Pipeline Execution Walkthrough
+   Figure 9.1 — Base learner optimization results: LightGBM, XGBoost, CatBoost metrics
+   Figure 9.2 — Multi-model training progression with Optuna TPE hyperparameter search
+   24
+=== PAGE 25 ===
+   Figure 9.3 — Model accuracy, F1-macro, ROC-AUC scores per base learner after CV
+   Figure 9.4 — Phase B: Stacking meta-ensemble synthesis and calibration
+   25
+=== PAGE 26 ===
+   Figure 9.5 — Final SAGE Super-Learner results: coverage, ECE, and uncertainty metrics
+   Figure 9.6 — LLM orchestration layer: Mistral meta-insight synthesis and report export
+   9.2 Performance Summary
+   Metric
+   ROC-AUC (Phase A)
+   Description / Target
+   Unbiased nested CV estimate — primary selection
+   criterion for classification tasks
+   26
+=== PAGE 27 ===
+   R² Score (Phase A)
+   Unbiased nested CV estimate — primary selection
+   criterion for regression tasks
+   Expected Calibration
+   Error (ECE)
+   Target < 0.05; measures probability calibration
+   quality of meta-ensemble
+   Conformal Coverage
+   Target ≥ 95% (α = 0.05); formal marginal
+   coverage guarantee
+   Mean Prediction Set Size
+   Mean Interval Width
+   MLflow Runs
+   For classification; smaller = lower epistemic
+   uncertainty
+   For regression; smaller = higher precision
+   prediction intervals
+   One run per base model per experiment; full
+   parameter + metric logging
+   The nested CV design ensures that the reported metrics represent true
+   generalization performance, not optimistically biased validation scores. In typical
+   classification experiments on tabular datasets, SAGE achieves conformal coverage
+   rates of 94–97% (within statistical tolerance of the 95% target) and ECE values
+   below 0.04 after Isotonic Regression calibration.
+   27
+=== PAGE 28 ===
+   10.LLM ORCHESTRATION LAYER
+   A distinguishing feature of SAGE is its integration with local Large Language
+   Models (LLMs) via the Ollama runtime. After the nested CV and conformal
+   prediction stages complete, the llm_orchestrator.py module constructs a
+   structured prompt containing pipeline metadata and submits it to a locally running
+   Mistral instance for meta-insight synthesis.
+   10.1 Architecture
+   The orchestrator uses Python's built-in http.client to communicate with the Ollama
+   API server
+   dependencies —
+   the LLM runs
+   entirely
+   on the
+   user'savoids
+   machine,
+   ensuring data
+   (localhost:11434).
+   This
+   design
+   choice
+   external
+   privacy and zero API costs.
+   The prompt engineering follows a structured pattern:
+   System prompt: Defines the LLM persona as an 'Elite ML Research
+   Scientist' analyzing an AutoML pipeline
+   User payload: Includes task type, dataset shape, final unbiased score,
+   conformal uncertainty value, and per-model scores from nested CV
+   Output format: Formal Markdown report with three paragraphs covering
+   architectural analysis, uncertainty interpretation, and feature engineering
+   recommendations
+   10.2 LLM-Generated Insights
+   The LLM is specifically prompted to interpret what the Mean Prediction Set Size
+   implies about the dataset's intrinsic noise. A set size near 1.0 indicates a clean,
+   separable dataset; set sizes of 2.0+ suggest substantial class overlap or noisy
+   features that prevent confident predictions even with a well-calibrated model.
+   This meta-insight generation step bridges the gap between raw metrics and
+   actionable recommendations — translating mathematical outputs (ECE = 0.03,
+   mean set size = 1.4) into human-readable analysis that practitioners can act on.
+   28
+=== PAGE 29 ===
+   LLM Integration Design Choices
+   Local Mistral via Ollama: Zero clouddependency, complete data privacy, no
+   API rate limits
+   stream: false mode: Waits for complete response rather than streaming partial
+   tokens
+   Graceful degradation: If Ollama is offline, a placeholder message is returned
+   and the pipeline continues
+   Structured prompt: Enforces 3-paragraph Markdown format for consistent,
+   actionable output
+   No fine-tuning required: Base Mistral (7B parameters) has sufficient ML domain
+   knowledge for meta-insight synthesis
+   29
+=== PAGE 30 ===
+   11.MLFLOW EXPERIMENT TRACKING
+   Reproducibility is a first-class requirement in SAGE. Every model training run is
+   logged to a local MLflow tracking server (file:./mlruns) with full parameter and
+   metric provenance. MLflow provides the experiment management infrastructure
+   that transforms SAGE from a one-shot script into a reproducible research system.
+   11.1 What is MLflow
+   MLflow is an open-source platform for the machine learning lifecycle, developed
+   by Databricks. It provides four components: Tracking (logging parameters,
+   metrics, artifacts), Projects (packaging ML code for reproducibility), Models
+   (model registry and deployment), and Model Registry (centralized model
+   versioning).
+   SAGE uses MLflow Tracking with the following logging structure:
+   Experiment Name: SAGE_Omni_Suite — all runs grouped under this
+   experiment for easy comparison
+   Run Name: SAGE_PhaseA_{model_name} — one MLflow run per base
+   learner per execution
+   Parameters: Best hyperparameters discovered by Optuna (n_estimators,
+   learning_rate, max_depth, etc.)
+   Metrics: Primary score (ROC-AUC or R²) from inner nested CV evaluation
+   Tags: Task type, dataset shape, and pipeline configuration metadata
+   11.2 Deterministic Reproducibility
+   SAGE
+   enforces
+   strict
+   global
+   determinism
+   through
+   the
+   set_global_determinism(seed=42) function, which sets random seeds for Python's
+   random module, NumPy's global RNG, PYTHONHASHSEED, and thread count
+   environment
+   variables
+   (OMP_NUM_THREADS,
+   MKL_NUM_THREADS,
+   OPENBLAS_NUM_THREADS). Combined with Optuna's TPE sampler seed and
+   MLflow's parameter logging, any SAGE experiment can be exactly reproduced from
+   its logged parameters.
+   11.3 SHAP Integration
+   The report generation phase computes SHAP (SHapley Additive exPlanations)
+   values using TreeExplainer for tree-based models. SHAP values provide a game-
+   30
+=== PAGE 31 ===
+   theoretically grounded attribution of each feature's contribution to individual
+   predictions, satisfying local accuracy, consistency, and dummy player axioms.
+   Critically, SHAP values are computed on the transformed feature space — after the
+   preprocessing and SelectKBest layers — ensuring that attributions correctly reflect
+   the feature representation seen by the model, not the raw input space.
+   31
+=== PAGE 32 ===
+   12. CONCLUSION
+   12.1 Summary of Achievements
+   Thisinternship project successfully designed and implemented SAGE AutoML — a
+   research-grade Automated Machine Learning system that addresses fundamental
+   scientific shortcomings in conventional AutoML frameworks. The key achievements
+   are:
+   1. Implemented True Nested Cross-Validation with zero preprocessing
+   leakage through scikit-learn Pipeline isolation — eliminating selection bias
+   from hyperparameter optimization.
+   2. Built a diverse 10-algorithm ecosystem spanning gradient boosting
+   (LightGBM, XGBoost, CatBoost), ensemble methods (HistGBM, RF,
+   ExtraTrees, AdaBoost), linear models, KNN, and MLP — capturing
+   complementary inductive biases.
+   3. Deployed Optuna with TPE Sampler as the black-box optimization engine,
+   achieving near-optimal hyperparameter configurations in 5 trials per model
+   through Bayesian surrogate modeling.
+   4. Implemented native Split Conformal Prediction providing distribution-free,
+   finite-sample 95% marginal coverage guarantees for both classification
+   and regression.
+   5. Developed Mutual Information-based leakage detection with automatic
+   feature quarantine, preventing production models from relying on targetleaky features.
+   6. Integrated Isotonic Regression calibration (CalibratedClassifierCV) to
+   minimize ECE, producing well-calibrated probability estimates from the
+   stacking meta-ensemble.
+   7. Connected a local Mistral LLM for automated meta-insight synthesis,
+   translating raw metrics into actionable research-grade recommendations.
+   8. Delivered a polished terminal UI with Rich library visualizations, progress
+   tracking, and interactive pipeline transitions — making research-grade ML
+   accessible.
+   12.2 Limitations
+   Feature engineering is limited to SelectKBest — domain-specific feature
+   creation (polynomial features, interaction terms) is not automated.
+   The 5 Optuna trial limit prioritizes speed over exhaustiveness —
+   production deployments should use n_trials ≥ 50.
+   32
+=== PAGE 33 ===
+   The Mistral LLM integration requires a local Ollama instance, which may
+   not be available in all deployment environments.
+   Deep learning architectures (CNN, Transformer-based tabular models like
+   TabNet) are not included in the model ecosystem.
+   33
+=== PAGE 34 ===
+   13. APPENDIX
+   13.1 Future Work
+   Severalpromisingdirections exist for extending SAGE:
+   Feature Factory Integration: Implement automated feature generation with
+   FeatureTools or manual polynomial/interaction feature engineering within
+   the leakage-safe pipeline.
+   Multi-fidelity Optimization: Use successive halving or Hyperband within
+   Optuna to allocate more trials to promising configurations and prune poor
+   ones earlier.
+   Deep TabNet Integration: Add TabNet (Arik & Pfister, 2021) and FTTransformer as deep learning base learners for high-dim
+   datasets.
+   Federated Learning Mode: Extend the pipeline for privacy-preserving
+   distributed learning where data cannot be centralized.
+   Web Interface: Build a Streamlit or Gradio frontend to make SAGE
+   accessible without terminal expertise.
+   Online Learning: Add support for incremental learning (partial_fit) for
+   streaming data scenarios.
+   34
+=== PAGE 35 ===
+   14. REFERENCES
+   The following references informed the design and implementation of SAGE
+   AutoML:
+   [1] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A
+   Next-generation Hyperparameter Optimization Framework. KDD 2019.
+   [2] Arik, S. O., & Pfister, T. (2021). TabNet: Attentive Interpretable Tabular
+   Learning. AAAI 2021.
+   [3] Bergstra, J., & Bengio, Y. (2012). Random Search for Hyper-Parameter
+   Optimization. JMLR, 13, 281–305.
+   [4] Bergstra, J., Bardenet, R., Bengio, Y., & Kégl, B. (2011). Algorithms for
+   Hyper-Parameter Optimization. NeurIPS 2011.
+   [5] Breiman, L. (2001). Random Forests. Machine Learning, 45(1), 5–32.
+   [6] Cawley, G. C., & Talbot, N. L. C. (2010). On Over-fitting in Model Selection
+   and Subsequent Selection Bias in Performance Evaluation. JMLR, 11, 2079–
+   2107.
+   [7] Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System.
+   KDD 2016.
+   [8] Feurer, M., Klein, A., Eggensperger, K., Springenberg, J., Blum, M., & Hutter,
+   F. (2015). Efficient and Robust Automated Machine Learning. NeurIPS 2015.
+   [9] Freund, Y., & Schapire, R. E. (1997). A Decision-Theoretic Generalization of
+   On-Line Learning and an Application to Boosting. Journal of Computer and
+   System Sciences, 55(1), 119–139.
+   [10] Geurts, P., Ernst, D., & Wehenkel, L. (2006). Extremely Randomized Trees.
+   Machine Learning, 63(1), 3–42.
+   [11] Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., ... & Liu, T.-Y.
+   (2017). LightGBM: A Highly Efficient Gradient Boosting Decision Tree.
+   NeurIPS 2017.
+   [12] LeDell, E., & Poirier, S. (2020). H2O AutoML: Scalable Automatic Machine
+   Learning. ICML AutoML Workshop 2020.
+   [13] Li, Y., Shen, Y., Zhang, W., Chen, Y., Jiang, H., Liu, M., ... & Yang, Q.
+   (2021). OpenBox: A Generalized Black-box Optimization Service. KDD 2021.
+   [14] Olson, R. S., Bartley, N., Urbanowicz, R. J., & Moore, J. H. (2016).
+   Evaluation of a Tree-based Pipeline Optimization Tool for Automating Data
+   Science. GECCO 2016.
+   [15] Papadopoulos, H., Proedrou, K., Vovk, V., & Gammerman, A. (2002).
+   Inductive Confidence Machines for Regression. ECML 2002.
+   35
+=== PAGE 36 ===
+   [16] Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., & Gulin, A.
+   (2018). CatBoost: Unbiased Boosting with Categorical Features. NeurIPS
+   2018.
+   [17] Thornton, C., Hutter, F., Hoos, H. H., & Leyton-Brown, K. (2013). AutoWEKA: Combined Selection and Hyperparameter O
+   Classification Algorithms. KDD 2013.
+   [18] Vovk, V., Gammerman, A., & Shafer, G. (2005). Algorithmic Learning in a
+   Random World. Springer.
+   [19] Angelopoulos, A. N., & Bates, S. (2021). A Gentle Introduction to Conformal
+   Prediction and Distribution-Free Uncertainty Quantification. arXiv:2107.07511.
+   [20] Lundberg, S. M., & Lee, S.-I. (2017). A Unified Approach to Interpreting
+   Model Predictions (SHAP). NeurIPS 2017
+   36
+=== PAGE 37 ===
